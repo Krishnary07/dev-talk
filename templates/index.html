@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Code Buddy</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+        }
+
+        #container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        #conversation {
+            margin-bottom: 20px;
+            overflow-y: scroll;
+            height: 300px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #message {
+            width: 70%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            margin-right: 10px;
+        }
+
+        #send,
+        #clear {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #send:hover,
+        #clear:hover {
+            background-color: #3e8e41;
+        }
+
+        .user-message {
+            margin-bottom: 10px;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .bot-message {
+
+            margin-bottom: 10px;
+            color: #fff;
+            font-size: 14px;
+            background-color: #222;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        #coding-block {
+            background-color: #222;
+            color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        #coding-block h2 {
+            font-size: 18px;
+            margin-top: 0;
+        }
+
+        #coding-block ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        #coding-block li {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <h1>Code Buddy</h1>
+        <div id="conversation"></div>
+        <div>
+            <input type="text" id="message" />
+            <button id="send">Send</button>
+            <button id="clear">Clear</button>
+        </div>
+        <div id="coding-block">
+            <h2>Sample coding questions:</h2>
+            <ul>
+                <li>What is the difference between == and === in JavaScript?</li>
+                <li>How do you reverse a string in Python?</li>
+                <li>What is the time complexity of the quicksort algorithm?</li>
+            </ul>
+        </div>
+    </div>
+
+</body>
+<script>
+    const conversationDiv = document.getElementById('conversation');
+    const messageInput = document.getElementById('message');
+    const sendButton = document.getElementById('send');
+    const clearButton = document.getElementById('clear');
+    const codingBlock = document.getElementById('coding-block');
+
+
+    const getConversation = async () => {
+        const response = await fetch('/conversation');
+        const conversation = await response.json();
+
+        conversationDiv.innerHTML = '';
+        conversation.messages.forEach(message => {
+            if (message.user) {
+                const userMessageDiv = document.createElement('div');
+                userMessageDiv.innerText = `You: ${message.user}`;
+                userMessageDiv.classList.add('user-message');
+                conversationDiv.appendChild(userMessageDiv);
+            } else {
+                const botMessageDiv = document.createElement('div');
+                botMessageDiv.innerText = `codeBuddy:\n ${message.bot}`;
+                botMessageDiv.classList.add('bot-message');
+                conversationDiv.appendChild(botMessageDiv);
+            }
+        });
+
+        conversationDiv.scrollTop = conversationDiv.scrollHeight;
+    };
+
+
+    const sendMessage = async () => {
+        const message = messageInput.value;
+        if (message === '') {
+            return;
+        }
+
+        const response = await fetch('/response', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ message })
+        });
+
+        const data = await response.json();
+
+        const botMessageDiv = document.createElement('div');
+        botMessageDiv.innerText = `Bot: ${data.response}`;
+        botMessageDiv.classList.add('bot-message');
+
+        const copyButton = document.createElement('button');
+        copyButton.innerText = 'Copy';
+        copyButton.addEventListener('click', () => {
+            navigator.clipboard.writeText(data.response);
+            alert('Copied to clipboard!');
+        });
+
+        botMessageDiv.appendChild(copyButton);
+        conversationDiv.appendChild(botMessageDiv);
+
+        if (message.toLowerCase().includes('javascript') || message.toLowerCase().includes('python') || message.toLowerCase().includes('algorithm')) {
+            codingBlock.style.display = 'block';
+        } else {
+            codingBlock.style.display = 'none';
+        }
+
+        conversationDiv.scrollTop = conversationDiv.scrollHeight;
+
+        messageInput.value = '';
+    };
+
+    const clearConversation = async () => {
+        await fetch('/clear');
+        conversationDiv.innerHTML = '';
+    };
+
+    sendButton.addEventListener('click', sendMessage);
+    clearButton.addEventListener('click', clearConversation);
+
+    //  
+
+
+    getConversation();
+
+</script>
+
+</html>
