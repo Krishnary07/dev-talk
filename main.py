@@ -39,7 +39,7 @@ app.add_middleware(
 
 load_dotenv()
 
-openai.api_key = "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"
+openai.api_key = os.getenv("OPEN-AI-API-KEY")
 
 
 
